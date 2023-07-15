@@ -13,16 +13,22 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import rocks.newsie.app.data.FeedCollection
 import rocks.newsie.app.fragments.AppBar
 import rocks.newsie.app.fragments.Drawer
+import rocks.newsie.app.screens.FeedScreen
+import rocks.newsie.app.screens.HomeScreen
 import rocks.newsie.app.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -45,47 +51,60 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Root() {
+    val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val collections = listOf(
-        FeedCollection(name = "feed 1", feeds = listOf()),
-        FeedCollection(name = "feed 2", feeds = listOf())
+        FeedCollection(id = "1", name = "feed 1", feeds = listOf()),
+        FeedCollection(id = "2", name = "feed 2", feeds = listOf())
     )
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Drawer(collections = collections, onClickCollection = {
-                    Log.d("Root", "onClickCollection clicked")
-                }, modifier = Modifier)
-            }
-        },
-        content = {
-            Scaffold(
-                topBar = {
-                    AppBar(onNavIconClick = {
+                Drawer(
+                    collections = collections,
+                    onGotoClick = { it ->
+                        Log.d("Root", "clicked, go to: $it")
+                        navController.navigate(it)
                         scope.launch {
-                            Log.d("Root", "nav icon clicked")
-                            drawerState.open()
+                            drawerState.close()
                         }
-                    })
-                },
-                content = { paddingValues ->
-                    Greeting("nick", modifier = Modifier.padding(paddingValues))
-                }
-            )
+                    }, modifier = Modifier
+                )
+            }
         }
-    )
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+    ) {
+        Scaffold(
+            topBar = {
+                AppBar(onNavIconClick = {
+                    scope.launch {
+                        Log.d("Root", "nav icon clicked")
+                        drawerState.open()
+                    }
+                })
+            },
+            content = { paddingValues ->
+                NavHost(navController = navController, startDestination = "home") {
+                    composable("home") {
+//                            Text("hey", modifier = Modifier.padding(paddingValues))
+                        HomeScreen(modifier = Modifier.padding(paddingValues))
+                    }
+                    composable(
+                        "feed/{feedId}",
+                        arguments = listOf(navArgument("feedId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        FeedScreen(
+                            modifier = Modifier.padding(paddingValues),
+                            feedId = backStackEntry.arguments?.getString("feedId").toString()
+                        )
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)
