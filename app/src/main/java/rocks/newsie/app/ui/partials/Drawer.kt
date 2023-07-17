@@ -9,31 +9,42 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import rocks.newsie.app.ui.theme.AppTheme
 
 @Composable
 fun Drawer(
     modifier: Modifier = Modifier,
     navigateTo: (String) -> Unit
 ) {
+    val rowModifier = Modifier
+        .fillMaxWidth()
+    val rowTextModifier = Modifier
+        .padding(12.dp)
+
     Column(modifier = modifier) {
-        Text(text = "Header", modifier = Modifier.padding(32.dp))
+        Text(text = "Header", modifier = rowTextModifier)
         Divider()
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp)
+        Row(modifier = rowModifier
             .clickable {
                 navigateTo("home")
             }) {
-            Text("Home")
+            Text("Home", modifier = rowTextModifier)
         }
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp)
+        Row(modifier = rowModifier
             .clickable {
                 navigateTo("settings")
             }) {
-            Text("Settings")
+            Text("Settings", modifier = rowTextModifier)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DrawerPreview() {
+    AppTheme {
+        Drawer(navigateTo = {})
     }
 }

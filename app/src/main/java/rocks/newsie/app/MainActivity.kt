@@ -70,7 +70,7 @@ fun Root() {
             when (val route = navBackStackEntry?.destination?.route) {
                 "home" -> {
                     AppBarState(
-                        title = "Newsie",
+                        title = "News",
                         navIcon = Icons.Rounded.Menu,
                         onNavIconClick = {
                             scope.launch {
@@ -95,7 +95,6 @@ fun Root() {
                     )
                 }
             }
-
         }
     }
 
@@ -104,7 +103,7 @@ fun Root() {
         drawerContent = {
             ModalDrawerSheet {
                 Drawer(
-                    navigateTo = { it ->
+                    navigateTo = {
                         scope.launch {
                             drawerState.close()
                         }
@@ -126,7 +125,7 @@ fun Root() {
                     composable(
                         "feed/{feedId}",
                         arguments = listOf(navArgument("feedId") { type = NavType.StringType })
-                    ) { it ->
+                    ) {
                         FeedScreen(
                             modifier = Modifier.padding(innerPadding),
                             feedId = it.arguments?.getString("feedId").toString()
