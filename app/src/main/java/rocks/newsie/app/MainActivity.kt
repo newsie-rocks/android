@@ -6,6 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -15,20 +18,25 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
-import rocks.newsie.app.data.FeedCollection
-import rocks.newsie.app.fragments.AppBar
-import rocks.newsie.app.fragments.Drawer
-import rocks.newsie.app.screens.FeedScreen
-import rocks.newsie.app.screens.HomeScreen
+import rocks.newsie.app.ui.partials.AppBar
+import rocks.newsie.app.ui.partials.AppBarState
+import rocks.newsie.app.ui.partials.Drawer
+import rocks.newsie.app.ui.screens.FeedScreen
+import rocks.newsie.app.ui.screens.HomeScreen
+import rocks.newsie.app.ui.screens.SettingsScreen
 import rocks.newsie.app.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -52,54 +60,80 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Root() {
     val navController = rememberNavController()
+
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    val collections = listOf(
-        FeedCollection(id = "1", name = "feed 1", feeds = listOf()),
-        FeedCollection(id = "2", name = "feed 2", feeds = listOf())
-    )
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val appBarState by remember {
+        derivedStateOf {
+            when (val route = navBackStackEntry?.destination?.route) {
+                "home" -> {
+                    AppBarState(
+                        title = "Newsie",
+                        navIcon = Icons.Rounded.Menu,
+                        onNavIconClick = {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
+                }
+
+                else -> {
+                    Log.i("Root", "route: $route")
+                    val title = when (route) {
+                        "settings" -> "Settings"
+                        else -> "NA"
+                    }
+                    AppBarState(
+                        title = title,
+                        navIcon = Icons.Rounded.ArrowBack,
+                        onNavIconClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+            }
+
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
                 Drawer(
-                    collections = collections,
-                    onGotoClick = { it ->
-                        Log.d("Root", "clicked, go to: $it")
-                        navController.navigate(it)
+                    navigateTo = { it ->
                         scope.launch {
                             drawerState.close()
                         }
-                    }, modifier = Modifier
+                        navController.navigate(it)
+                    }
                 )
             }
         }
     ) {
         Scaffold(
             topBar = {
-                AppBar(onNavIconClick = {
-                    scope.launch {
-                        Log.d("Root", "nav icon clicked")
-                        drawerState.open()
-                    }
-                })
+                AppBar(state = appBarState)
             },
-            content = { paddingValues ->
+            content = { innerPadding ->
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
-//                            Text("hey", modifier = Modifier.padding(paddingValues))
-                        HomeScreen(modifier = Modifier.padding(paddingValues))
+                        HomeScreen(modifier = Modifier.padding(innerPadding))
                     }
                     composable(
                         "feed/{feedId}",
                         arguments = listOf(navArgument("feedId") { type = NavType.StringType })
-                    ) { backStackEntry ->
+                    ) { it ->
                         FeedScreen(
-                            modifier = Modifier.padding(paddingValues),
-                            feedId = backStackEntry.arguments?.getString("feedId").toString()
+                            modifier = Modifier.padding(innerPadding),
+                            feedId = it.arguments?.getString("feedId").toString()
                         )
+                    }
+                    composable("settings") {
+                        SettingsScreen(modifier = Modifier.padding(innerPadding))
                     }
                 }
             }
