@@ -119,7 +119,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Setting")
+                        Text("Switch On")
                         Switch(
                             checked = settings.isSwitchOn,
                             onCheckedChange = { value ->

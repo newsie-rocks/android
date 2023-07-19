@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,6 +48,8 @@ fun NavController.navigateToHome() {
 fun HomeScreen(
     onGotoSettings: () -> Unit = {},
 ) {
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -68,6 +71,9 @@ fun HomeScreen(
 
                 },
                 actions = {
+                    IconButton(onClick = onGotoSettings) {
+                        Icon(Icons.Rounded.Add, "Add a feed")
+                    }
                     IconButton(onClick = onGotoSettings) {
                         Icon(Icons.Rounded.Settings, "Open the menu")
                     }
