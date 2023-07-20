@@ -1,5 +1,7 @@
 package rocks.newsie.app.ui.screens
 
+import android.os.Parcelable
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,10 +19,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,15 +34,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import kotlinx.parcelize.Parcelize
 import rocks.newsie.app.R
 import rocks.newsie.app.ui.theme.AppTheme
 import rocks.newsie.app.ui.theme.frenchCannonFontFamily
 
 fun NavGraphBuilder.homeScreen(
-    onGotoSettings: () -> Unit,
+    navController: NavController,
 ) {
     composable("home") {
-        HomeScreen(onGotoSettings)
+        val viewModel = rememberHomeScreenViewModel(navController)
+        HomeScreen(vm = viewModel)
     }
 }
 
@@ -48,34 +53,52 @@ fun NavController.navigateToHome() {
     this.navigate("home")
 }
 
-@Composable
-private fun rememberHomeScreenState(
-    onGotoSettings: () -> Unit,
-): HomeScreenState {
-    return remember {
-        HomeScreenState(onGotoSettings)
+class HomeScreenViewModel(
+    private val navController: NavController,
+    initValue: String = "abc",
+) {
+    var value by mutableStateOf(initValue)
+        private set
+
+    fun setValueAs(newValue: String) {
+        value = newValue
+    }
+
+    fun onGoToSettings() {
+        navController.navigateToSettings()
     }
 }
 
-@Stable
-class HomeScreenState(
-    val onGotoSettings: () -> Unit,
-) {
-    var value by mutableStateOf("abc")
-        private set
+@Parcelize
+data class HomeScreenViewModelHolder(val value: String) : Parcelable
 
-    fun changeValue(v: String) {
-        value = v
+@Composable
+fun rememberHomeScreenViewModel(
+    navController: NavController,
+): HomeScreenViewModel {
+    Log.d("Home", "Calling remember")
+    val saver = Saver<HomeScreenViewModel, HomeScreenViewModelHolder>(
+        save = {
+            HomeScreenViewModelHolder(value = it.value)
+        },
+        restore = {
+            HomeScreenViewModel(
+                navController = navController,
+                initValue = it.value
+            )
+        }
+    )
+    return rememberSaveable(saver = saver) {
+        Log.d("Home", "computing view_model")
+        HomeScreenViewModel(navController)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onGotoSettings: () -> Unit = {},
+    vm: HomeScreenViewModel,
 ) {
-    val state = rememberHomeScreenState(onGotoSettings)
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -97,10 +120,10 @@ fun HomeScreen(
 
                 },
                 actions = {
-                    IconButton(onClick = state.onGotoSettings) {
+                    IconButton(onClick = { vm.onGoToSettings() }) {
                         Icon(Icons.Rounded.Add, "Add a feed")
                     }
-                    IconButton(onClick = state.onGotoSettings) {
+                    IconButton(onClick = { vm.onGoToSettings() }) {
                         Icon(Icons.Rounded.Settings, "Open the menu")
                     }
                 }
@@ -109,8 +132,8 @@ fun HomeScreen(
         content = {
             Column(modifier = Modifier.padding(it)) {
                 Text("Home")
-                Text("value= ${state.value}")
-                Button(onClick = { state.changeValue("XXXXXXXX") }) {
+                Text("value= ${vm.value}")
+                Button(onClick = { vm.setValueAs("XXXX") }) {
                     Text("Click me")
                 }
             }
@@ -121,7 +144,10 @@ fun HomeScreen(
 @Preview(showBackground = false)
 @Composable
 fun HomeScreenPreview() {
+    val navController = rememberNavController()
+    val viewModel = rememberHomeScreenViewModel(navController)
+
     AppTheme {
-        HomeScreen()
+        HomeScreen(vm = viewModel)
     }
 }

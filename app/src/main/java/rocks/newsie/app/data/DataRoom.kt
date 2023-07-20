@@ -48,7 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var Instance: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getInstance(context: Context): AppDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(
                     context,
@@ -62,9 +62,10 @@ abstract class AppDatabase : RoomDatabase() {
     }
 }
 
-class DataRepository(
-    db: AppDatabase,
+class DataRoom(
+    context: Context,
 ) {
+    private val db = AppDatabase.getInstance(context)
     private val feedDao: FeedDao = db.feedDao()
 
     suspend fun insert(feed: Feed) = feedDao.insert(feed)

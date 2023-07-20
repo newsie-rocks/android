@@ -16,7 +16,6 @@ import androidx.navigation.compose.rememberNavController
 import rocks.newsie.app.data.SettingsStore
 import rocks.newsie.app.ui.screens.feedScreen
 import rocks.newsie.app.ui.screens.homeScreen
-import rocks.newsie.app.ui.screens.navigateToSettings
 import rocks.newsie.app.ui.screens.settingsScreen
 import rocks.newsie.app.ui.theme.AppTheme
 
@@ -39,19 +38,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Root() {
-    val ctx = LocalContext.current
     val navController: NavHostController = rememberNavController()
+    val ctx = LocalContext.current
     val settingsStore = SettingsStore(context = ctx)
 
     NavHost(
         navController = navController,
         startDestination = "home",
     ) {
-        homeScreen(
-            onGotoSettings = {
-                navController.navigateToSettings()
-            }
-        )
+        homeScreen(navController)
         feedScreen()
         settingsScreen(
             settingsStore = settingsStore,

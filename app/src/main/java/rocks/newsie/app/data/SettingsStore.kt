@@ -23,7 +23,7 @@ private object PreferencesKeys {
 }
 
 class SettingsStore(
-    private val context: Context
+    private val context: Context,
 ) {
     val settings: Flow<Settings> = context.dataStore.data
 //        .catch { exception ->

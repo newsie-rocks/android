@@ -26,7 +26,7 @@ class ApiException : Exception {
 }
 
 class ApiClient(
-    private val baseUrl: String
+    private val baseUrl: String,
 ) {
     private val retrofit: Retrofit = Retrofit.Builder().baseUrl(baseUrl)
         .addConverterFactory(MoshiConverterFactory.create())
