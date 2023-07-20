@@ -63,7 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 class DataRepository(
-    private val db: AppDatabase,
+    db: AppDatabase,
 ) {
     private val feedDao: FeedDao = db.feedDao()
 
