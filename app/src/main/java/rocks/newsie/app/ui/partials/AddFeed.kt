@@ -38,7 +38,7 @@ fun AddFeed(
             value = url,
             onValueChange = { url = it },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(

@@ -9,4 +9,10 @@ data class Feed(
     val id: String,
     val url: String,
     val name: String,
-)
+) {
+    fun loadArticles(): List<Article> {
+        return listOf(
+            Article(url = "https://www.nasa.gov/rss/dyn/breaking_news.rss"),
+        )
+    }
+}

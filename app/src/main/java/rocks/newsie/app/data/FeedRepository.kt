@@ -22,7 +22,7 @@ interface FeedDao {
     suspend fun delete(feed: Feed)
 
     @Query("SELECT * from feeds WHERE id = :id")
-    fun getFeed(id: Int): Flow<Feed>
+    fun getFeed(id: String): Flow<Feed>
 
     @Query("SELECT * from feeds ORDER BY url ASC")
     fun getAllFeeds(): Flow<List<Feed>>
@@ -37,6 +37,6 @@ class FeedRepository(
     suspend fun insert(feed: Feed) = feedDao.insert(feed)
     suspend fun update(feed: Feed) = feedDao.update(feed)
     suspend fun delete(feed: Feed) = feedDao.delete(feed)
-    fun getFeed(id: Int): Flow<Feed> = feedDao.getFeed(id)
+    fun getFeed(id: String): Flow<Feed> = feedDao.getFeed(id)
     fun getAllFeeds(): Flow<List<Feed>> = feedDao.getAllFeeds()
 }

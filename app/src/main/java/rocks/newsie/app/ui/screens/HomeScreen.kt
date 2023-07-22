@@ -1,10 +1,18 @@
 package rocks.newsie.app.ui.screens
 
 import android.os.Parcelable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -15,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -59,6 +69,8 @@ class HomeScreenViewModel(
     var addFeedSheetIsOpened by mutableStateOf(addFeedSheetIsOpened)
         private set
 
+    val feeds = feedsUseCase.getFeeds()
+
     fun openAddFeed() {
         addFeedSheetIsOpened = true
     }
@@ -74,6 +86,10 @@ class HomeScreenViewModel(
 
     fun onGoToSettings() {
         navController.navigateToSettings()
+    }
+
+    fun goToFeedScreen(feedId: String) {
+        navController.navigateToFeed(feedId)
     }
 }
 
@@ -110,6 +126,7 @@ fun HomeScreen(
     viewModel: HomeScreenViewModel,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val feeds by viewModel.feeds.collectAsState(initial = listOf())
 
     Scaffold(
         topBar = {
@@ -127,23 +144,55 @@ fun HomeScreen(
                 }
             )
         },
-        content = {
-            Column(modifier = Modifier.padding(it)) {
-                Text("Home")
+        content = { innerPadding ->
+            Column(modifier = Modifier.padding(innerPadding)) {
+                Text("My feeds")
+                feeds.forEach { feed ->
+                    FeedRow(
+                        feed,
+                        onClickRow = { feedId ->
+                            viewModel.goToFeedScreen(feedId)
+                        },
+                    )
+                }
             }
-        }
-    )
 
-    // new feed sheet
-    AddFeedBottomSheet(
-        isOpened = viewModel.addFeedSheetIsOpened,
-        onDismiss = { viewModel.closeAddFeed() },
-        onSubmit = {
-            coroutineScope.launch {
-                viewModel.addNewFeed(it)
-            }
+            // new feed sheet
+            AddFeedBottomSheet(
+                isOpened = viewModel.addFeedSheetIsOpened,
+                onDismiss = { viewModel.closeAddFeed() },
+                onSubmit = {
+                    coroutineScope.launch {
+                        viewModel.addNewFeed(it)
+                    }
+                }
+            )
         }
     )
+}
+
+@Composable
+fun FeedRow(feed: Feed, onClickRow: (feedId: String) -> Unit = {}) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onClickRow(feed.id)
+            },
+
+        ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(feed.name)
+            Icon(Icons.Rounded.KeyboardArrowRight, "Go to feed")
+        }
+
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,12 +202,15 @@ fun AddFeedBottomSheet(
     onDismiss: () -> Unit = {},
     onSubmit: (Feed) -> Unit = {},
 ) {
-    val state = rememberModalBottomSheetState()
+    val state = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
 
     if (isOpened) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = state,
+            windowInsets = WindowInsets.safeContent,
         ) {
             AddFeed(
                 onSubmit = onSubmit

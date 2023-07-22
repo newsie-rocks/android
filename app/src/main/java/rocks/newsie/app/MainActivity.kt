@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import rocks.newsie.app.data.FeedRepository
 import rocks.newsie.app.data.SettingsStore
 import rocks.newsie.app.domain.FeedsUseCase
+import rocks.newsie.app.ui.screens.articleScreen
 import rocks.newsie.app.ui.screens.feedScreen
 import rocks.newsie.app.ui.screens.homeScreen
 import rocks.newsie.app.ui.screens.settingsScreen
@@ -51,7 +52,8 @@ fun Root() {
         startDestination = "home",
     ) {
         homeScreen(navController, feedsUseCase)
-        feedScreen()
+        feedScreen(navController, feedsUseCase)
+        articleScreen(navController)
         settingsScreen(navController, settingsStore)
     }
 }

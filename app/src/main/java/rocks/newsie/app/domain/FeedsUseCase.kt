@@ -8,6 +8,8 @@ class FeedsUseCase(
 ) {
     fun getFeeds() = feedRepository.getAllFeeds()
 
+    fun getFeed(feedId: String) = feedRepository.getFeed(feedId)
+
     suspend fun addFeed(feed: Feed) {
         val feedWithId = feed.copy(id = UUID.randomUUID().toString())
         feedRepository.insert(feedWithId)
