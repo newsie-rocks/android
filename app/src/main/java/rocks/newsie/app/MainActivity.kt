@@ -13,7 +13,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import rocks.newsie.app.data.FeedRepository
 import rocks.newsie.app.data.SettingsStore
+import rocks.newsie.app.domain.FeedsUseCase
 import rocks.newsie.app.ui.screens.feedScreen
 import rocks.newsie.app.ui.screens.homeScreen
 import rocks.newsie.app.ui.screens.settingsScreen
@@ -39,21 +41,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Root() {
     val navController: NavHostController = rememberNavController()
-    val ctx = LocalContext.current
-    val settingsStore = SettingsStore(context = ctx)
+    val context = LocalContext.current
+    val settingsStore = SettingsStore(context = context)
+    val feedRepository = FeedRepository(context)
+    val feedsUseCase = FeedsUseCase(feedRepository)
 
     NavHost(
         navController = navController,
         startDestination = "home",
     ) {
-        homeScreen(navController)
+        homeScreen(navController, feedsUseCase)
         feedScreen()
-        settingsScreen(
-            settingsStore = settingsStore,
-            onGoBack = {
-                navController.popBackStack()
-            }
-        )
+        settingsScreen(navController, settingsStore)
     }
 }
 
