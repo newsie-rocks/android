@@ -146,7 +146,6 @@ fun HomeScreen(
         },
         content = { innerPadding ->
             Column(modifier = Modifier.padding(innerPadding)) {
-                Text("My feeds")
                 feeds.forEach { feed ->
                     FeedRow(
                         feed,
@@ -179,7 +178,6 @@ fun FeedRow(feed: Feed, onClickRow: (feedId: String) -> Unit = {}) {
             .clickable {
                 onClickRow(feed.id)
             },
-
         ) {
         Row(
             modifier = Modifier
@@ -213,12 +211,12 @@ fun AddFeedBottomSheet(
             windowInsets = WindowInsets.safeContent,
         ) {
             AddFeed(
-                onSubmit = onSubmit
+                onSubmit = onSubmit,
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, bottom = 32.dp, top = 0.dp)
             )
         }
     }
-
-
 }
 
 @Preview(showBackground = false)

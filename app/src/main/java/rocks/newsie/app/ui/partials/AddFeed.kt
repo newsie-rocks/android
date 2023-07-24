@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -23,13 +22,14 @@ import rocks.newsie.app.ui.theme.AppTheme
 
 @Composable
 fun AddFeed(
+    modifier: Modifier = Modifier,
     onSubmit: (Feed) -> Unit,
 ) {
     var url by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 24.dp)
+        modifier = modifier
     ) {
         Text("Add a new feed")
         Spacer(modifier = Modifier.height(8.dp))
