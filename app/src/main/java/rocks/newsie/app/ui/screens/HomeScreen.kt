@@ -6,12 +6,16 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -43,10 +47,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
@@ -226,12 +232,24 @@ private fun FeedRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text("title=${feed.title}")
-            Text("link=${feed.link}")
-            Text("name=${feed.name}")
-            Text("desc=${feed.description}")
-            Text("image=${feed.image}")
+        Box(
+            modifier = Modifier
+                .width(52.dp)
+                .padding(end = 20.dp)
+        ) {
+            if (!feed.image?.url.isNullOrEmpty()) {
+                AsyncImage(
+                    model = feed.image?.url,
+                    contentDescription = "Feed logo",
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text("${feed.name ?: feed.title}", fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("${feed.description}", fontSize = 12.sp, lineHeight = 20.sp)
         }
         IconButton(onClick = { isMenuOpened = true }) {
             Icon(Icons.Rounded.MoreVert, contentDescription = "Open the feed menu")
