@@ -82,7 +82,6 @@ fun rememberArticleScreenViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleScreen(
-    modifier: Modifier = Modifier,
     viewModel: ArticleScreenViewModel,
 ) {
     val articleUrl = viewModel.articleUrl

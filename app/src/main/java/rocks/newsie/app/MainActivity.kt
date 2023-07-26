@@ -13,9 +13,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import rocks.newsie.app.data.FeedRepository
-import rocks.newsie.app.data.SettingsStore
-import rocks.newsie.app.domain.FeedsUseCase
+import rocks.newsie.app.data.rememberFeedParser
+import rocks.newsie.app.data.rememberFeedRepository
+import rocks.newsie.app.data.rememberSettingsStore
+import rocks.newsie.app.domain.rememberFeedsUseCase
 import rocks.newsie.app.ui.screens.articleScreen
 import rocks.newsie.app.ui.screens.feedScreen
 import rocks.newsie.app.ui.screens.homeScreen
@@ -41,11 +42,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Root() {
-    val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
-    val settingsStore = SettingsStore(context = context)
-    val feedRepository = FeedRepository(context)
-    val feedsUseCase = FeedsUseCase(feedRepository)
+    val navController: NavHostController = rememberNavController()
+    val feedParser = rememberFeedParser(context = context)
+    val feedRepository = rememberFeedRepository(context = context)
+    val feedsUseCase = rememberFeedsUseCase(
+        feedRepository = feedRepository,
+        feedParser = feedParser,
+    )
+    val settingsStore = rememberSettingsStore(context = context)
 
     NavHost(
         navController = navController,

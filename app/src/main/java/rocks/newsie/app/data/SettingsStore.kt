@@ -1,6 +1,8 @@
 package rocks.newsie.app.data
 
 import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
@@ -43,5 +45,14 @@ class SettingsStore(
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_SWITCH_ON] = isSwitchOn
         }
+    }
+}
+
+@Composable
+fun rememberSettingsStore(
+    context: Context,
+): SettingsStore {
+    return remember {
+        SettingsStore(context = context)
     }
 }

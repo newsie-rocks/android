@@ -1,5 +1,6 @@
 package rocks.newsie.app.ui.screens
 
+import android.os.Parcelable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,8 +36,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import rocks.newsie.app.data.Settings
 import rocks.newsie.app.data.SettingsStore
+import rocks.newsie.app.data.rememberSettingsStore
 import rocks.newsie.app.ui.theme.AppTheme
 
 fun NavGraphBuilder.settingsScreen(
@@ -42,7 +47,10 @@ fun NavGraphBuilder.settingsScreen(
     settingsStore: SettingsStore,
 ) {
     composable("settings") {
-        val viewModel = rememberSettingsScreenViewModel(navController, settingsStore)
+        val viewModel = rememberSettingsViewModel(
+            navController,
+            settingsStore,
+        )
         SettingsScreen(viewModel)
     }
 }
@@ -51,9 +59,7 @@ fun NavController.navigateToSettings() {
     this.navigate("settings")
 }
 
-data class SettingItem(val key: String)
-
-class SettingsScreenViewModel(
+class SettingsViewModel(
     private val navController: NavController,
     private val settingsStore: SettingsStore,
 ) {
@@ -68,22 +74,47 @@ class SettingsScreenViewModel(
     }
 }
 
+@Parcelize
+data class SettingsViewModelSaver(
+    val dummy: Int,
+) : Parcelable
+
 @Composable
-fun rememberSettingsScreenViewModel(
+fun rememberSettingsViewModel(
     navController: NavController,
     settingsStore: SettingsStore,
-): SettingsScreenViewModel {
-    return remember {
-        SettingsScreenViewModel(navController, settingsStore)
+): SettingsViewModel {
+    return rememberSaveable(
+        inputs = arrayOf(navController, settingsStore),
+        saver = Saver(
+            save = {
+                SettingsViewModelSaver(dummy = 0)
+            },
+            restore = {
+                SettingsViewModel(
+                    navController = navController,
+                    settingsStore = settingsStore,
+                )
+            }
+        ),
+    ) {
+        SettingsViewModel(
+            navController = navController,
+            settingsStore = settingsStore,
+        )
     }
 }
 
+data class SettingItem(val key: String)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsScreenViewModel) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+) {
     val scrollState = rememberScrollState()
     val settings: Settings by viewModel.settings.collectAsState(initial = Settings())
-    val coroutineScope = rememberCoroutineScope()
+    val coroutine = rememberCoroutineScope()
 
     val menuItems = remember {
         listOf(
@@ -128,7 +159,7 @@ fun SettingsScreen(viewModel: SettingsScreenViewModel) {
                         Switch(
                             checked = settings.isSwitchOn,
                             onCheckedChange = { value ->
-                                coroutineScope.launch {
+                                coroutine.launch {
                                     viewModel.setSwitch(value)
                                 }
                             },
@@ -146,11 +177,13 @@ fun SettingsScreen(viewModel: SettingsScreenViewModel) {
 @Composable
 fun SettingsScreenPreview() {
     val navController = rememberNavController()
-    val ctx = LocalContext.current
-    val settingsStore = SettingsStore(context = ctx)
-    val viewModel = rememberSettingsScreenViewModel(navController, settingsStore)
+    val settingsStore = rememberSettingsStore(context = LocalContext.current)
 
     AppTheme {
-        SettingsScreen(viewModel = viewModel)
+        val viewModel = rememberSettingsViewModel(
+            navController = navController,
+            settingsStore = settingsStore,
+        )
+        SettingsScreen(viewModel)
     }
 }

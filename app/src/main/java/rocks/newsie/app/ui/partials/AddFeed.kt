@@ -14,16 +14,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import rocks.newsie.app.domain.Feed
+import androidx.compose.ui.unit.sp
 import rocks.newsie.app.ui.theme.AppTheme
 
 @Composable
 fun AddFeed(
     modifier: Modifier = Modifier,
-    onSubmit: (Feed) -> Unit,
+    onSubmit: (url: String, name: String?) -> Unit,
+    error: String? = null,
 ) {
     var url by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -31,8 +34,12 @@ fun AddFeed(
     Column(
         modifier = modifier
     ) {
-        Text("Add a new feed")
-        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            "Add a new feed",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(modifier = Modifier.height(20.dp))
         TextField(
             label = { Text("URL") },
             value = url,
@@ -40,24 +47,27 @@ fun AddFeed(
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         TextField(
-            label = { Text("Name") },
+            label = { Text("Name (optional)") },
             value = name,
             onValueChange = { name = it },
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = {
-            onSubmit(
-                Feed(
-                    id = "",
-                    url = url,
-                    name = name,
-                )
-            )
-        }) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = { onSubmit(url, name) },
+            modifier = Modifier.height(52.dp),
+        ) {
             Text("Add a feed", modifier = Modifier.fillMaxWidth())
+        }
+        if (error != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                error,
+                color = Color.Red,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -67,7 +77,7 @@ fun AddFeed(
 fun AddFeedPreview() {
     AppTheme {
         AddFeed(
-            onSubmit = {}
+            onSubmit = { _, _ -> },
         )
     }
 }

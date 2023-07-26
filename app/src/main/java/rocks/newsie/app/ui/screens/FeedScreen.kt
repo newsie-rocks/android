@@ -29,12 +29,12 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.flow.map
 import kotlinx.parcelize.Parcelize
-import rocks.newsie.app.data.FeedRepository
+import rocks.newsie.app.data.rememberFeedParser
+import rocks.newsie.app.data.rememberFeedRepository
 import rocks.newsie.app.domain.Article
-import rocks.newsie.app.domain.Feed
 import rocks.newsie.app.domain.FeedsUseCase
+import rocks.newsie.app.domain.rememberFeedsUseCase
 import rocks.newsie.app.ui.theme.AppTheme
 
 
@@ -44,7 +44,7 @@ fun NavGraphBuilder.feedScreen(
 ) {
     composable("feeds/{feedId}") {
         val feedId = it.arguments?.getString("feedId").toString()
-        val viewModel = rememberFeedScreenViewModel(
+        val viewModel = rememberFeedViewModel(
             navController,
             feedsUseCase,
             feedId,
@@ -57,13 +57,13 @@ fun NavController.navigateToFeed(feedId: String) {
     this.navigate("feeds/$feedId")
 }
 
-class FeedScreenViewModel(
+class FeedViewModel(
     private val navController: NavController,
     private val feedsUseCase: FeedsUseCase,
     val feedId: String,
 ) {
     val feed = feedsUseCase.getFeed(feedId)
-    val articles = feed.map { it.loadArticles() }
+    val articles = feedsUseCase.getFeedArticles(feedId)
 
     fun onGoBack() {
         navController.popBackStack()
@@ -75,27 +75,27 @@ class FeedScreenViewModel(
 }
 
 @Parcelize
-data class FeedScreenViewModelHolder(val feedId: String) : Parcelable
+data class FeedViewModelSaver(val feedId: String) : Parcelable
 
 @Composable
-fun rememberFeedScreenViewModel(
+fun rememberFeedViewModel(
     navController: NavController,
     feedsUseCase: FeedsUseCase,
     feedId: String,
-): FeedScreenViewModel {
+): FeedViewModel {
     return rememberSaveable(saver = Saver(
         save = {
-            FeedScreenViewModelHolder(feedId = it.feedId)
+            FeedViewModelSaver(feedId = it.feedId)
         },
         restore = {
-            FeedScreenViewModel(
+            FeedViewModel(
                 navController = navController,
                 feedsUseCase = feedsUseCase,
                 feedId = it.feedId
             )
         }
     )) {
-        FeedScreenViewModel(
+        FeedViewModel(
             navController,
             feedsUseCase,
             feedId,
@@ -107,16 +107,9 @@ fun rememberFeedScreenViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
-    modifier: Modifier = Modifier,
-    viewModel: FeedScreenViewModel,
+    viewModel: FeedViewModel,
 ) {
-    val feed by viewModel.feed.collectAsState(
-        initial = Feed(
-            id = "",
-            url = "",
-            name = "",
-        )
-    )
+    val feed by viewModel.feed.collectAsState(initial = null)
     val articles by viewModel.articles.collectAsState(initial = listOf())
 
     Scaffold(
@@ -128,7 +121,7 @@ fun FeedScreen(
                     }
                 },
                 title = {
-                    Text("Feed ${feed.name}")
+                    Text("Feed ${feed?.name}")
                 },
             )
         },
@@ -161,20 +154,24 @@ private fun ArticleRow(
             .padding(vertical = 16.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Article ${article.url}")
-        Icon(Icons.Rounded.ArrowForward, "Go to article")
+        Column {
+            Text("title: ${article.title}")
+            Text("link: ${article.link}")
+            Text("author: ${article.author}")
+            Text("image: ${article.image}")
+        }
     }
 }
 
 @Preview(showBackground = false)
 @Composable
 fun FeedScreenPreview() {
-    val navController = rememberNavController()
     val context = LocalContext.current
-    val feedRepository = FeedRepository(context)
-    val feedsUseCase = FeedsUseCase(feedRepository)
-    val feedId = ""
-    val viewModel = rememberFeedScreenViewModel(navController, feedsUseCase, feedId)
+    val navController = rememberNavController()
+    val feedParser = rememberFeedParser(context = context)
+    val feedRepository = rememberFeedRepository(context = context)
+    val feedsUseCase = rememberFeedsUseCase(feedRepository, feedParser)
+    val viewModel = rememberFeedViewModel(navController, feedsUseCase, "")
 
     AppTheme {
         FeedScreen(viewModel = viewModel)
