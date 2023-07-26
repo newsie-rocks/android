@@ -1,18 +1,26 @@
 package rocks.newsie.app.ui.screens
 
+import android.os.Build
 import android.os.Parcelable
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,10 +33,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +58,7 @@ import rocks.newsie.app.ui.partials.AddFeed
 import rocks.newsie.app.ui.partials.Logo
 import rocks.newsie.app.ui.theme.AppTheme
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.homeScreen(
     navController: NavController,
     feedsUseCase: FeedsUseCase,
@@ -69,6 +80,9 @@ class HomeViewModel(
     var isAddFeedSheetOpened by mutableStateOf(false)
         private set
 
+    var isAddFeedSheetInProgress by mutableStateOf(false)
+        private set
+
     var errorAddFeed by mutableStateOf<String?>(null)
         private set
 
@@ -83,23 +97,31 @@ class HomeViewModel(
         errorAddFeed = null
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun addNewFeed(url: String, name: String?) {
         try {
+            isAddFeedSheetInProgress = true
             feedsUseCase.addNewFeed(url, name)
             isAddFeedSheetOpened = false
         } catch (e: Exception) {
             // NB: feed is invalid
             Log.e("ERR", e.toString())
             errorAddFeed = e.message
+        } finally {
+            isAddFeedSheetInProgress = false
         }
+    }
+
+    suspend fun deleteFeed(feed: Feed) {
+        feedsUseCase.deleteFeed(feed)
     }
 
     fun onGoToSettings() {
         navController.navigateToSettings()
     }
 
-    fun onGoToFeed(feedId: String) {
-        navController.navigateToFeed(feedId)
+    fun onGoToFeed(feed: Feed) {
+        navController.navigateToFeed(feed.id)
     }
 }
 
@@ -129,6 +151,7 @@ fun rememberHomeScreenViewModel(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -154,13 +177,18 @@ fun HomeScreen(
             )
         },
         content = { innerPadding ->
-            Column(modifier = Modifier.padding(innerPadding)) {
-                feeds.forEach { feed ->
+            LazyColumn(modifier = Modifier.padding(innerPadding)) {
+                items(feeds) { feed ->
                     FeedRow(
                         feed,
-                        onClickRow = { feedId ->
-                            viewModel.onGoToFeed(feedId)
+                        onClickRow = { thisFeed ->
+                            viewModel.onGoToFeed(thisFeed)
                         },
+                        onDelete = { thisFeed ->
+                            coroutineScope.launch(Dispatchers.IO) {
+                                viewModel.deleteFeed(thisFeed)
+                            }
+                        }
                     )
                     Divider()
                 }
@@ -175,21 +203,28 @@ fun HomeScreen(
                         viewModel.addNewFeed(url, name)
                     }
                 },
-                error = viewModel.errorAddFeed
+                error = viewModel.errorAddFeed,
+                isInProgress = viewModel.isAddFeedSheetInProgress,
             )
         }
     )
 }
 
 @Composable
-private fun FeedRow(feed: Feed, onClickRow: (feedId: String) -> Unit = {}) {
+private fun FeedRow(
+    feed: Feed,
+    onClickRow: (feed: Feed) -> Unit = {},
+    onDelete: (feed: Feed) -> Unit = {},
+) {
+    var isMenuOpened by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                onClickRow(feed.id)
-            }
+            .clickable { onClickRow(feed) }
             .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column {
             Text("title=${feed.title}")
@@ -198,9 +233,19 @@ private fun FeedRow(feed: Feed, onClickRow: (feedId: String) -> Unit = {}) {
             Text("desc=${feed.description}")
             Text("image=${feed.image}")
         }
-
+        IconButton(onClick = { isMenuOpened = true }) {
+            Icon(Icons.Rounded.MoreVert, contentDescription = "Open the feed menu")
+            DropdownMenu(
+                expanded = isMenuOpened,
+                onDismissRequest = { isMenuOpened = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Delete") },
+                    onClick = { onDelete(feed) }
+                )
+            }
+        }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,6 +255,7 @@ private fun AddFeedBottomSheet(
     onDismiss: () -> Unit,
     onSubmit: (url: String, name: String?) -> Unit,
     error: String? = null,
+    isInProgress: Boolean = false,
 ) {
     val state = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -224,6 +270,7 @@ private fun AddFeedBottomSheet(
             AddFeed(
                 onSubmit = onSubmit,
                 error = error,
+                isInProgress = isInProgress,
                 modifier = Modifier
                     .padding(start = 16.dp, end = 16.dp, bottom = 40.dp, top = 0.dp)
             )
@@ -231,6 +278,7 @@ private fun AddFeedBottomSheet(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = false)
 @Composable
 fun HomeScreenPreview() {

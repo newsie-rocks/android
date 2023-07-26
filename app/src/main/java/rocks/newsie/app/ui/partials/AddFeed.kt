@@ -4,8 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -27,9 +30,10 @@ fun AddFeed(
     modifier: Modifier = Modifier,
     onSubmit: (url: String, name: String?) -> Unit,
     error: String? = null,
+    isInProgress: Boolean = false,
 ) {
     var url by rememberSaveable { mutableStateOf("") }
-    var name by rememberSaveable { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -44,22 +48,37 @@ fun AddFeed(
             label = { Text("URL") },
             value = url,
             onValueChange = { url = it },
+            enabled = !isInProgress,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         )
         Spacer(modifier = Modifier.height(16.dp))
         TextField(
             label = { Text("Name (optional)") },
-            value = name,
+            value = name ?: "",
             onValueChange = { name = it },
+            enabled = !isInProgress,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = { onSubmit(url, name) },
-            modifier = Modifier.height(52.dp),
+            onClick = {
+                onSubmit(url, name)
+            },
+            enabled = !isInProgress,
+            modifier = Modifier
+                .height(52.dp)
+                .fillMaxWidth(),
         ) {
-            Text("Add a feed", modifier = Modifier.fillMaxWidth())
+            Text("Add a feed")
+            if (isInProgress) {
+                Spacer(modifier = Modifier.width(16.dp))
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
         if (error != null) {
             Spacer(modifier = Modifier.height(16.dp))

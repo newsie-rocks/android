@@ -23,8 +23,10 @@ class FeedRepository(
     fun getFeedWithUrl(url: String): Flow<Feed?> = feedDao.getWithUrl(url)
 
     suspend fun insertArticle(article: Article) = articleDao.insert(article)
+    suspend fun insertArticles(vararg articles: Article) = articleDao.insertMany(*articles)
     suspend fun updateArticle(article: Article) = articleDao.update(article)
     suspend fun deleteArticle(article: Article) = articleDao.delete(article)
+    suspend fun deleteAllArticlesForFeed(feedId: String) = articleDao.deleteAllForFeed(feedId)
     fun getArticle(id: String): Flow<Article?> = articleDao.get(id)
     fun getAllArticles(): Flow<List<Article>> = articleDao.getAll()
     fun getArticlesForFeed(feedId: String): Flow<List<Article>> = articleDao.getAllForFeed(feedId)

@@ -14,9 +14,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
@@ -24,56 +27,68 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.parcelize.Parcelize
+import rocks.newsie.app.data.rememberFeedParser
+import rocks.newsie.app.data.rememberFeedRepository
+import rocks.newsie.app.domain.FeedsUseCase
+import rocks.newsie.app.domain.rememberFeedsUseCase
 import rocks.newsie.app.ui.theme.AppTheme
 
 fun NavGraphBuilder.articleScreen(
     navController: NavController,
+    feedsUseCase: FeedsUseCase,
 ) {
-    composable("articles/{articleUrl}") {
-        val articleUrl = it.arguments?.getString("articleUrl").toString()
-        val viewModel = rememberArticleScreenViewModel(
+    composable("articles/{articleId}") {
+        val articleId = it.arguments?.getString("articleId").toString()
+        val viewModel = rememberArticleViewModel(
             navController,
-            articleUrl
+            feedsUseCase,
+            articleId
         )
         ArticleScreen(viewModel = viewModel)
     }
 }
 
-fun NavController.navigateToArticle(articleUrl: String) {
-    this.navigate("articles/$articleUrl")
+fun NavController.navigateToArticle(articleId: String) {
+    this.navigate("articles/$articleId")
 }
 
-class ArticleScreenViewModel(
+class ArticleViewModel(
     private val navController: NavController,
-    val articleUrl: String,
+    private val feedsUseCase: FeedsUseCase,
+    val articleId: String,
 ) {
+    val article = feedsUseCase.getArticle(articleId)
+
     fun onGoBack() {
         navController.popBackStack()
     }
 }
 
 @Parcelize
-data class ArticleScreenViewModelHolder(val articleUrl: String) : Parcelable
+data class ArticleViewModelSaver(val articleId: String) : Parcelable
 
 @Composable
-fun rememberArticleScreenViewModel(
+fun rememberArticleViewModel(
     navController: NavController,
-    articleUrl: String,
-): ArticleScreenViewModel {
+    feedsUseCase: FeedsUseCase,
+    articleId: String,
+): ArticleViewModel {
     return rememberSaveable(saver = Saver(
         save = {
-            ArticleScreenViewModelHolder(articleUrl = it.articleUrl)
+            ArticleViewModelSaver(articleId = it.articleId)
         },
         restore = {
-            ArticleScreenViewModel(
+            ArticleViewModel(
                 navController = navController,
-                articleUrl = it.articleUrl,
+                feedsUseCase = feedsUseCase,
+                articleId = it.articleId,
             )
         }
     )) {
-        ArticleScreenViewModel(
+        ArticleViewModel(
             navController,
-            articleUrl,
+            feedsUseCase,
+            articleId,
         )
     }
 }
@@ -82,11 +97,9 @@ fun rememberArticleScreenViewModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleScreen(
-    viewModel: ArticleScreenViewModel,
+    viewModel: ArticleViewModel,
 ) {
-    val articleUrl = viewModel.articleUrl
-    // Declare a string that contains a url
-    val mUrl = "https://www.geeksforgeeks.org"
+    val article by viewModel.article.collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -97,7 +110,7 @@ fun ArticleScreen(
                     }
                 },
                 title = {
-                    Text("Article")
+                    Text("${article?.title}")
                 },
             )
         },
@@ -113,11 +126,11 @@ fun ArticleScreen(
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
                         webViewClient = WebViewClient()
-                        loadUrl(mUrl)
+                        loadUrl(article?.link ?: "")
                     }
                 },
                 update = {
-                    it.loadUrl(mUrl)
+                    it.loadUrl(article?.link ?: "")
                 }
             )
         }
@@ -127,9 +140,16 @@ fun ArticleScreen(
 @Preview(showBackground = false)
 @Composable
 fun ArticleScreenPreview() {
+    val context = LocalContext.current
     val navController = rememberNavController()
-    val articleUrl = ""
-    val viewModel = rememberArticleScreenViewModel(navController, articleUrl)
+    val feedParser = rememberFeedParser(context)
+    val feedRepository = rememberFeedRepository(context)
+    val feedsUseCase = rememberFeedsUseCase(feedRepository, feedParser)
+    val viewModel = rememberArticleViewModel(
+        navController,
+        feedsUseCase,
+        articleId = ""
+    )
 
     AppTheme {
         ArticleScreen(viewModel = viewModel)

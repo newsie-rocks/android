@@ -50,7 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
 class DbConverters {
     @RequiresApi(Build.VERSION_CODES.O)
 //    val pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")
-    
+
     @TypeConverter
     fun fromTimestamp(value: String?): ZonedDateTime? {
         return value?.let { ZonedDateTime.parse(it) }
@@ -76,7 +76,7 @@ interface FeedDao {
     @Query("SELECT * from feeds WHERE id = :id")
     fun get(id: String): Flow<Feed?>
 
-    @Query("SELECT * from feeds ORDER BY link ASC")
+    @Query("SELECT * from feeds")
     fun getAll(): Flow<List<Feed>>
 
     @Query("SELECT * from feeds WHERE link = :url LIMIT 1")
@@ -88,11 +88,17 @@ interface ArticleDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(article: Article)
 
+    @Insert
+    suspend fun insertMany(vararg articles: Article)
+
     @Update
     suspend fun update(article: Article)
 
     @Delete
     suspend fun delete(article: Article)
+
+    @Query("DELETE FROM articles WHERE feedId = :feedId")
+    suspend fun deleteAllForFeed(feedId: String)
 
     @Query("SELECT * from articles WHERE id = :id")
     fun get(id: String): Flow<Article?>
